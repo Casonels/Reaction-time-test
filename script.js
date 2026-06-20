@@ -1,47 +1,57 @@
 const box = document.getElementById("box");
 const result = document.getElementById("result");
 
-
-let startTime = null;
+let startTime = 0;
 let waiting = false;
+let ready = false;
 
 let attempts = [];
 let count = 0;
 
 
+function resetBox() {
+    box.style.background = "#2b2b2b";
+    box.innerHTML = "Click to start";
+    waiting = false;
+    ready = false;
+    startTime = 0;
+}
+
 
 function startRound() {
 
     waiting = true;
-    startTime = null;
-
+    ready = false;
 
     box.style.background = "#c0392b";
     box.innerHTML = "Wait...";
 
 
-    let delay =
-        Math.random() * 4000 + 1000;
+    let delay = Math.random() * 4000 + 1000;
 
 
     setTimeout(() => {
+
+        if (!waiting) return;
+
 
         box.style.background = "#2ecc71";
         box.innerHTML = "CLICK!";
 
         startTime = performance.now();
+        ready = true;
 
 
     }, delay);
-
 }
 
 
 
-box.onclick = () => {
+box.onclick = function() {
 
 
-    if (!waiting) {
+    // Start game
+    if (!waiting && !ready) {
 
         startRound();
         return;
@@ -49,17 +59,17 @@ box.onclick = () => {
     }
 
 
-    if (startTime === null) {
+
+    // Clicked too early
+    if (waiting && !ready) {
 
         result.innerHTML =
-        "Too early! Try again.";
+        "Too early! Wait for green.";
 
-        waiting = false;
         attempts = [];
         count = 0;
 
-        box.style.background="#2b2b2b";
-        box.innerHTML="Click to start";
+        resetBox();
 
         return;
 
@@ -67,50 +77,62 @@ box.onclick = () => {
 
 
 
-    let time =
-        Math.round(
-            performance.now()-startTime
-        );
+    // Successful click
+    if (ready) {
 
 
-    attempts.push(time);
-    count++;
+        let reaction =
+            Math.round(
+                performance.now() - startTime
+            );
+
+
+        attempts.push(reaction);
+        count++;
+
+
+        let average =
+            Math.round(
+                attempts.reduce((a,b)=>a+b,0)
+                / attempts.length
+            );
+
+
+        result.innerHTML =
+        `
+        Attempt ${count}/5<br>
+        Time: ${reaction} ms<br>
+        Average: ${average} ms
+        `;
 
 
 
-    let avg =
-        Math.round(
-            attempts.reduce((a,b)=>a+b,0)
-            / attempts.length
-        );
+        waiting = false;
+        ready = false;
 
 
 
-    result.innerHTML =
-    `
-    Attempt ${count}/5<br>
-    Time: ${time} ms<br>
-    Average: ${avg} ms
-    `;
+        if (count === 5) {
+
+            result.innerHTML +=
+            `<br><br>Finished! Average: ${average} ms`;
+
+            attempts = [];
+            count = 0;
+
+            box.innerHTML =
+            "Click to restart";
+
+        } else {
+
+            box.innerHTML =
+            "Click for next";
+
+        }
 
 
-
-    waiting=false;
-    startTime=null;
-
-
-    if(count >= 5){
-
-        result.innerHTML +=
-        `<br><br>Finished! Final average: ${avg} ms`;
-
-        count=0;
-        attempts=[];
+        box.style.background="#2b2b2b";
 
     }
-
-
-    box.style.background="#2b2b2b";
-    box.innerHTML="Click for next";
 
 };
